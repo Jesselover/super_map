@@ -2,11 +2,14 @@
   <div>
     <div class="tree-wrap">
       <div class="tree-title">{{title}}</div>
-      <div class="tree-box"></div>
+      <div class="tree-box">
+        <!-- todo -->
+        <el-button @click="searchTruck">选择车辆</el-button>
+      </div>
     </div>
     <div class="map-container"
          id="map-container"></div>
-    <div class="maptool-box">
+    <!-- <div class="maptool-box">
       <div v-for="(item,index) in toolsOption"
            :key="index"
            class="tool-info">
@@ -31,162 +34,232 @@
                @click="checkRow(false, item, index)">
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
 <script>
-import locationIcon from '@/assets/images/Location-fill.png'
-import "leaflet/dist/leaflet.css"
-import L from "leaflet";
-import '@supermap/iclient-leaflet';
+// import locationIcon from '@/assets/images/myImg/Location-fill.png'
+// import StationIcon from '@/assets/images/myImg/shequfuwuzhan.png'
+// import FenceIcon from "@/assets/images/myImg/baguataiji.png"
+// import TruckIcon from '@/assets/images/myImg/shequfuwuzhan.png'
+import onlineCar from '@/assets/images/online.png'
+import L from 'leaflet';
+import { } from '@supermap/iclient-leaflet'; // 只支持按需引入
+// 引入 leaflet.markercluster
+import "leaflet.markercluster/dist/MarkerCluster.css"
+import "leaflet.markercluster/dist/MarkerCluster.Default.css"
+import "leaflet.markercluster";
 // import myData from './myData'
-import txj from './txj';
+import myData from './txj';
 export default {
   name: "LeafletMap",
   components: {},
   data () {
     return {
       // step 页面样式
-      title:txj.title,
-      toolsOption: txj.toolsOption,
-      // step map
-      map:null,
-      amapLayer:null,
-      tdtLayers:[],
 
+      title: myData.title,
+      // toolsOption: myData.toolsOption,
+      // step map
+      map: null,
+      amapLayer: null,
+      // stationsLayer: null,
+      // fencesLayer: null,
+      tdtLayers: [],
+      truckLayer: null,
       checkList: [],
-      data: {
-        "type": "FeatureCollection",
-        "features": [
-          {
-            "type": "Feature",
-            "properties": {
-              "name": 111
-            },
-            "geometry": {
-              "coordinates": [
-                108.80211210733694,
-                34.29944059025469
-              ],
-              "type": "Point"
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "name": 222
-            },
-            "geometry": {
-              "coordinates": [
-                108.7814178540051,
-                34.36779515040472
-              ],
-              "type": "Point"
-            },
-            "id": 1
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "name": 333
-            },
-            "geometry": {
-              "coordinates": [
-                108.6345871994074,
-                34.362101064700184
-              ],
-              "type": "Point"
-            }
-          }
-        ]
-      }// 切换地图
     }
   },
-  // created(){
-  //   this.toolsOption = txj.toolsOption
-  // },
   mounted () {
     this.initMap()
   },
   methods: {
     initMap () {
-      this.map = L.map('map-container')
+      this.map = L.map('map-container', {
+        center: [34.223, 108.952],
+        zoom: 10,
+      });
       // 加载 open street map 图层服务
       this.amapLayer = L.tileLayer("http://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}", {
         attribution: '&copys; 高德地图', //用来进行属性控制的字符串，描述了图层数据
-        // maxZoom: 13,
-        // minZoom: 3,
+        maxZoom: 18, //map 对象中的 maxZoom 属性是必须的，否则在创建 **makerClusterGroup ** 会报错
+        minZoom: 3,
         subdomains: "1234", // 子域名，替换{s}
         zoom: 1, // todo
       })
-      const tdtImgLayer = L.tileLayer("http://t0.tianditu.gov.cn/img_w/wmts?tk=8c863988b5518ef86f44ffea3b12a4eb", {
-        subdomains: "1234", 
-      }) // 矢量地图
-      const tdtLabelLayer=  L.tileLayer("http://t0.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=8c863988b5518ef86f44ffea3b12a4eb", {
-        subdomains: "1234", 
+      const tdtImgLayer = L.tileLayer("http://t0.tianditu.gov.cn/cta_c/wmts?tk=8c863988b5518ef86f44ffea3b12a4eb", {
+        subdomains: "1234",
+      }) // 矢量地图 //!401
+      const tdtLabelLayer = L.tileLayer("http://t0.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=8c863988b5518ef86f44ffea3b12a4eb", {
+        subdomains: "1234",
       }) // 卫星地图
-      const tdtDetailLayer=  L.tileLayer("http://t0.tianditu.gov.cn/cva_w/wmts?tk=8c863988b5518ef86f44ffea3b12a4eb", {
-        subdomains: "1234", 
-      }) // 矢量助剂
-      this.tdtLayers =new L.layerGroup([tdtImgLayer,tdtLabelLayer,tdtDetailLayer]) // todo 
+      const tdtDetailLayer = L.tileLayer("http://t0.tianditu.gov.cn/cva_w/wmts?tk=8c863988b5518ef86f44ffea3b12a4eb", {
+        subdomains: "1234",
+      }) // 矢量助记 //!401
+      this.tdtLayers = new L.layerGroup([tdtImgLayer, tdtLabelLayer, tdtDetailLayer])
       this.amapLayer.addTo(this.map)
+      // 添加天地图图层
+      // todo
       // 设施地图视图 中心位置
-     this.map.setView([34.223, 108.952], 20); //todo
-
+      this.map.setView([34.32311279131243, 108.79796727472097], 10); //todo
+      // step other     
       // 切换地图
       // const layerControl = new L.control.layers({
       //   "高德": amapLayer,
       // })
       // layerControl.addTo(map)
-
-      // marker
-      const icon = L.icon({
-        iconUrl: locationIcon,
-        iconSize: [40, 40],
-        iconAnchor: [20, 40], // 指示地理位置的锚点
-      })
-
-      const marker = L.marker([34.223, 108.952]
-        , { icon })
-      marker.addTo(this.map)
-
-      // geoJSON
-      const geoLayer = L.geoJSON(this.data, {
-        pointToLayer: (geoJsonPoint, lating) => {
-          return L.marker(lating, { icon })
-        }
-      })
-      geoLayer.addTo(this.map)
-
     },
-    checkRow (checked, item, index) {
-      if (checked) {
-        this.toolsOption[index].checked = true;
-      } else {
-        this.toolsOption[index].checked = false;
-        this.checkList = this.checkList.filter((check) => {
-          return check != item.name;
-        });
-      }
-
-      if(item.type==7){
-        if(checked){
-          this.amapLayer.removeFrom(this.map)
-          this.tdtLayers.addTo(this.map)
-        } else {
-          this.amapLayer.addTo(this.map)
-          this.tdtLayers.removeFrom(this.map)
+    // checkRow (checked, item, index) {
+    //   if (checked) {
+    //     this.toolsOption[index].checked = true;
+    //   } else {
+    //     this.toolsOption[index].checked = false;
+    //     this.checkList = this.checkList.filter((check) => {
+    //       return check != item.name;
+    //     });
+    //   }
+    //   // 点击“卫星地图”，切换地图
+    //   if (item.type == 7) {
+    //     if (checked) {
+    //       this.amapLayer.removeFrom(this.map)
+    //       this.tdtLayers.addTo(this.map)
+    //     } else {
+    //       this.amapLayer.addTo(this.map)
+    //       this.tdtLayers.removeFrom(this.map)
+    //     }
+    //   }
+    //   // “服务站”
+    //   if (item.type == 1) {
+    //     if (checked) {
+    //       const icon = L.icon({
+    //         iconUrl: StationIcon,
+    //         iconSize: [40, 40],
+    //         // iconAnchor: [20, 40], // 指示地理位置的锚点
+    //       })
+    //       this.stationsLayer = L.geoJSON(myData.stationLocations, {
+    //         pointToLayer: (geoJsonPoint, lating) => {
+    //           return L.marker(lating, { icon })
+    //         }
+    //       })
+    //       this.stationsLayer.addTo(this.map)
+    //     } else {
+    //       this.stationsLayer.removeFrom(this.map)
+    //       // this.map.removeLayer(this.stationsLayer)
+    //     }
+    //   }
+    //   // “电子围栏”
+    //   if (item.type == 2) {
+    //     const layerArr = []
+    //     const data = myData.fenceData.data
+    //     if (checked && data.length) {
+    //       const icon = L.icon({
+    //         iconUrl: FenceIcon,
+    //         iconSize: [20, 20],
+    //       })
+    //       // this.fencesLayer = L.marker([34.32311279131243, 108.79796727472097], { icon })
+    //       data.forEach(i => {
+    //         if (i.type == 2) {
+    //           const latlngs = i.lngLats.map(obj => {
+    //             return [Number(obj.lat), Number(obj.lng)]
+    //           })
+    //           layerArr.push(L.polygon(latlngs, { color: '#a900fb' })) // 绘制多边形
+    //           layerArr.push(L.marker(latlngs[0], { icon }))
+    //         }
+    //         if (i.type == 3) {
+    //           const latlng = [Number(i.lngLats[0].lat), Number(i.lngLats[0].lng)]
+    //           layerArr.push(L.circle(latlng, { radius: Number(i.radius), color: '#fe6462' }))
+    //           layerArr.push(L.marker(latlng, { icon }))
+    //         }
+    //       })
+    //       this.fencesLayer = L.layerGroup(layerArr)
+    //       this.fencesLayer.addTo(this.map)
+    //     } else {
+    //       this.fencesLayer.removeFrom(this.map)
+    //     }
+    //   }
+    // },
+    // 选择车辆
+    searchTruck () {
+      this.truckLayer = L.markerClusterGroup({
+        spiderfyOnMaxZoom: false,
+        disableClusteringAtZoom: 17, //缩放到此级别，将不再聚集
+      })
+      // const icon = L.icon({
+      //   iconUrl: TruckIcon,
+      //   iconSize: [30, 30],
+      //   // iconAnchor: [30, 30], // 指示地理位置的锚点
+      // })
+      const data = myData.truckData.data.data
+      data.forEach(item => {
+        // todo markerImg
+        // onLineBus: 1, //1 在线 2 离线
+        let markerImg = require('/src/assets/images/offline.png')
+        if (item.onLineBus == 1) {
+          markerImg = require('/src/assets/images/online.png')
         }
+        if (item.onLineBus == 2) {
+          markerImg = require('/src/assets/images/offline.png')
+        }
+        let videoImg = require('/src/assets/images/video1.png')
 
-      }
-    },
-
+        const icon = L.divIcon({
+          html: `
+           <div style=' width: 55px;height: 80px;'>
+            <img src=${markerImg} 
+           height=40
+           style='transform: rotate(${item.direction}deg);margin:0 auto'/>
+           <span style='algin'>${item.carNo}</span>
+           </div>`,
+          className: 'truck_icon'
+        })
+        const marker = L.marker(
+          [item.lat, item.lng],
+          {
+            icon,
+            title: item.carNo
+          })
+        marker.bindPopup(
+          `
+      <div class="title">
+        <div style="float: left">
+          <div class="name">
+            <div>${item.carNo}</div>
+            <div>${item.orgName}</div>
+          </div>
+          <div class="type">燃油车</div>
+        </div>
+        <img
+          src=${videoImg}
+          width="30px"
+          height="30px"
+          style="float: right;margin-right:40px;margin-top:3px"
+        />
+      </div>
+      <div class="body">
+        <div class="speed">车速:${item.speed} km/h</div>
+        <div style="display:flex;justify-content:space-between;float:none">
+          <span style="width: 50%;">车辆状态:</span>
+          <span style="width: 50%;">定位状态：定位</span>
+        </div>
+        <div>当前状态持续：29分钟30秒</div>
+        <div>最后定位时间：2023-10-10 16.17.04</div>
+        <div>最后定位位置：陕西省西安市高陵区姬家街道陕汽研究院陕汽工业园</div>
+      </div>
+`, {
+          className: 'detail',
+          maxWidth: '320px',
+        }
+        ).openPopup();
+        this.truckLayer.addLayer(marker)
+      })
+      this.map.addLayer(this.truckLayer)
+    }
   }
 }
-</script>
+</script >
 
-<style>
+<style >
 .map-container {
   position: absolute;
   left: 0;
@@ -217,82 +290,75 @@ export default {
   height: calc(100% - 45px);
   overflow: auto;
 }
-::v-deep .amap-marker-label {
-  border: 0;
-  background-color: transparent;
+.truck_icon {
   color: #707070;
-}
-.map-tool .el-checkbox-group {
-  line-height: normal;
-}
-
-.amap-sug-result {
-  left: auto !important;
-  right: 34px;
+  font-size: 0.75rem;
+  text-align: center;
 }
 
-.map-tool .el-checkbox__label {
+/* 信息弹框 */
+
+.detail {
+  margin: 0;
   padding: 0;
+  width: 360px;
 }
-
-.maptool-box {
-  z-index: 999;
-  cursor: default;
-  top: 1%;
-  position: absolute;
-  right: 1%;
-  background-color: rgba(255, 255, 255, 1);
-  height: 30px;
+.leaflet-popup-content-wrapper {
+  background: transparent;
+  box-shadow: none;
+}
+.leaflet-container a.leaflet-popup-close-button {
+  top: 15px;
+  right: 32px;
+  color: #fff;
+  font-size: 20px;
+}
+.leaflet-popup-tip{
+  width: 0px;
+  height: 0px;
+}
+.title {
+  background-color: #2ea35d;
+  height: 35px;
+}
+.body {
+  font-size: 14px;
+  height: 200px;
+  background-color: #fff;
+}
+.body .speed {
+  width: 100%;
+  padding-top: 15px;
+  font-size: 24px;
+  text-align: center;
+}
+.body div {
+  float: left;
+  font-size: 14px;
+  line-height: 30px;
   padding: 0 10px;
-  display: flex;
-  align-items: center;
 }
-.maptool-box .el-checkbox__input .el-checkbox__inner {
-  display: none !important;
+.name {
+  float: left;
+  font-size: 14px;
+  cursor: default;
+  color: #fff;
 }
-.tool-info {
-  display: inline-block;
-  padding: 0 15px;
-  /* line-height: 34px; */
-  position: relative;
-  display: flex;
-  align-items: center;
-  border-right: 1px dashed #ccc;
+.name div {
+  padding: 0 10px;
 }
-.maptool-box .tool-info:last-child {
-  border-right: none;
-}
-.tool-info .search-mode {
-  width: 200px;
-  height: 30px;
-  padding: 2px 0;
+.type {
+  float: left;
+  height: 18px;
+  padding: 0 6px;
+  margin-left: 10px;
+  margin-top: 3px;
   background: #fff;
-  border: 1px solid #ccc;
-  position: absolute;
-  top: 35px;
-  right: 0;
-  display: flex;
-  align-items: center;
-}
-.tool-info .search-mode .search {
-  width: 150px;
-  border: none;
-  outline: none;
-  margin: 0 10px;
-  border-right: 1px solid #ccc;
-}
-.tool-info .search-mode .close {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-}
-.info-box {
-  width: 300px;
-  height: 300px;
-  background: yellow;
-}
-.tool-img {
-  width: 18px;
-  margin-right: 5px;
+  border-radius: 5px;
+  color: #ffa46b;
+  line-height: 18px;
+  text-align: center;
+  font-size: 14px;
+  cursor: default;
 }
 </style>

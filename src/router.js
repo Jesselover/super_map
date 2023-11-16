@@ -4,10 +4,11 @@ import VueRouter from "vue-router";
 Vue.use(VueRouter);
 //引入路由 组件
 import LeafletMap from "./view/Map/LeafletMap/index.vue";
-import SuperMap from "./view/Map/SuperMap/index.vue"
+import SuperMap from "./view/Map/SuperMap/index.vue";
+import HistoricalTrack from"./view/Map/historicalTrack/index.vue"
 //创建router实例对象，去管理一组一组的路由规则
 const router = new VueRouter({
-  mode:'history',
+  mode: "history",
   routes: [
     // {
     //   path:"/",
@@ -15,7 +16,7 @@ const router = new VueRouter({
     // },
     {
       path: "/",
-      component: LeafletMap,
+      component: HistoricalTrack,
     },
   ],
 });

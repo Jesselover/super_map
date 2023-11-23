@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@supermap/iclient-leaflet": "^11.1.1",
+    "axios": "^1.6.2",
     "core-js": "^3.8.3",
     "element-ui": "^2.15.14",
     "leaflet": "^1.9.4",
